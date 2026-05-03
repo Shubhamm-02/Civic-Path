@@ -31,12 +31,21 @@ tests/                     Node test suite for planner and server behavior
 
 Core election reasoning is kept in pure functions so it can be tested without a browser. Static civic data is separated from behavior to keep future country/persona updates low-risk. The Cloud Run server is intentionally small and serves only files inside the project root.
 
+## Efficiency Choices
+
+- No runtime npm dependencies.
+- Google API clients are lazy-loaded only when a Gemini or Civic API action is used.
+- Static files are served with cache headers for stable repeat loads.
+- `.gcloudignore` keeps tests, docs, git metadata, and local-only files out of Cloud Run source uploads.
+- Performance-budget tests guard against accidental payload growth.
+
 ## Google Services Used
 
 - **Google Gemini API:** Optional AI explanation layer using `gemini-2.5-flash`. The local deterministic answer and voter context are supplied to Gemini so the model stays grounded in the app logic.
 - **Google Civic Information API:** Optional US voter information lookup for available elections, polling locations, early vote sites, contests, and election administration links.
 - **Google Calendar:** Generates add-to-calendar links for timeline milestones.
 - **Google Maps:** Opens election-office and location searches based on the user’s region.
+- **Google Cloud Run:** Hosts the production service with `min-instances=0`, `max-instances=1`, static caching, and Cloud Logging request visibility.
 
 No API key is committed. For demo use, enter restricted API keys in the app’s Google services drawer.
 
@@ -76,7 +85,7 @@ Then open `http://localhost:8080`.
 npm test
 ```
 
-The tests validate plan generation, urgency logic, intent detection, Google action URL creation, privacy-sensitive share text, static server routing, and traversal protection.
+The tests validate plan generation, urgency logic, intent detection, Google action URL creation, privacy-sensitive share text, static server routing, traversal protection, cache headers, lazy-loaded Google APIs, and payload budget.
 
 Run the full quality check:
 
@@ -102,9 +111,10 @@ gcloud run deploy civic-path \
 ## Quality, Security, and Accessibility
 
 - No framework or runtime dependencies are required for the core app.
+- The first render path avoids loading optional Google API clients until the user requests those features.
 - API keys are never committed and are only saved when the user explicitly opts in.
 - User and Gemini-generated text is rendered through `textContent`, not HTML injection.
-- The server adds `X-Content-Type-Options: nosniff` and blocks path traversal outside the project root.
+- The server adds CSP, permissions, referrer, and `X-Content-Type-Options` headers, and blocks path traversal outside the project root.
 - The UI uses semantic landmarks, labels, keyboard-focus styles, accessible contrast, responsive layout, and reduced-motion support.
 - Deadline-sensitive guidance includes an official-source caveat instead of pretending to be a legal authority.
 

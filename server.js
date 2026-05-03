@@ -12,6 +12,15 @@ const CONTENT_TYPES = {
   ".json": "application/json; charset=utf-8"
 };
 
+const STATIC_CACHE_EXTENSIONS = new Set([".css", ".js", ".svg", ".png", ".json"]);
+const SECURITY_HEADERS = {
+  "Content-Security-Policy":
+    "default-src 'self'; connect-src 'self' https://generativelanguage.googleapis.com https://www.googleapis.com; img-src 'self' data:; script-src 'self'; style-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
+  "Permissions-Policy": "camera=(), geolocation=(), microphone=()",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "X-Content-Type-Options": "nosniff"
+};
+
 export function createStaticServer({ rootDir = process.cwd() } = {}) {
   return createServer(createRequestHandler({ rootDir }));
 }
@@ -30,15 +39,21 @@ export function createRequestHandler({ rootDir = process.cwd() } = {}) {
       }
 
       const body = await readFile(filePath);
+      const extension = extname(filePath);
       res.writeHead(200, {
-        "Content-Type": CONTENT_TYPES[extname(filePath)] || "application/octet-stream",
-        "X-Content-Type-Options": "nosniff"
+        ...SECURITY_HEADERS,
+        "Cache-Control": getCacheControl(extension),
+        "Content-Type": CONTENT_TYPES[extension] || "application/octet-stream"
       });
       res.end(body);
     } catch {
       sendText(res, 404, "Not found");
     }
   };
+}
+
+export function getCacheControl(extension) {
+  return STATIC_CACHE_EXTENSIONS.has(extension) ? "public, max-age=3600" : "no-cache";
 }
 
 export function resolveRequestPath(pathname, rootDir = process.cwd()) {
@@ -66,8 +81,9 @@ function safelyDecodePath(pathname) {
 
 function sendText(res, statusCode, message) {
   res.writeHead(statusCode, {
+    ...SECURITY_HEADERS,
     "Content-Type": "text/plain; charset=utf-8",
-    "X-Content-Type-Options": "nosniff"
+    "Cache-Control": "no-cache"
   });
   res.end(message);
 }

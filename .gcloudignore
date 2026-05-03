@@ -1,9 +1,6 @@
 .git
 .gitignore
-docs/
 tests/
 coverage/
 node_modules/
 README.md
-assets/linkedin-share-card.svg
-assets/linkedin-share-card.png

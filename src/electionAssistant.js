@@ -9,6 +9,11 @@ import {
 export { COUNTRY_PROFILES, PERSONA_PROFILES, SUGGESTED_QUESTIONS } from "./electionData.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const DATE_FORMATTER = new Intl.DateTimeFormat("en", {
+  month: "short",
+  day: "numeric",
+  year: "numeric"
+});
 
 export function normalizeContext(input = {}) {
   const country = COUNTRY_PROFILES[input.country] ? input.country : "us";
@@ -41,11 +46,7 @@ export function parseLocalDate(dateValue) {
 
 export function formatDate(date) {
   if (!date) return "";
-  return new Intl.DateTimeFormat("en", {
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  }).format(date);
+  return DATE_FORMATTER.format(date);
 }
 
 export function daysUntil(dateValue, today = new Date()) {

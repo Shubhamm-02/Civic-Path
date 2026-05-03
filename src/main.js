@@ -7,10 +7,12 @@ import {
   createShareablePlanText,
   formatDate
 } from "./electionAssistant.js";
-import { askGemini, fetchCivicElections, fetchVoterInfo } from "./googleServices.js";
 
 const STORAGE_KEY = "civicPathContext";
 const KEY_STORAGE = "civicPathGoogleKeys";
+let googleServicesPromise;
+
+const savedContext = loadContext();
 
 const elements = {
   form: document.querySelector("#contextForm"),
@@ -50,8 +52,8 @@ const elements = {
 };
 
 const state = {
-  context: loadContext(),
-  completedChecklist: new Set(loadContext().completedChecklist || []),
+  context: savedContext,
+  completedChecklist: new Set(savedContext.completedChecklist || []),
   plan: null
 };
 
@@ -349,6 +351,7 @@ async function respondToQuestion(question) {
 
   elements.assistantMode.textContent = "Gemini thinking";
   try {
+    const { askGemini } = await getGoogleServices();
     const text = await askGemini({
       apiKey: elements.geminiKey.value,
       question,
@@ -417,6 +420,7 @@ function renderGeminiAnswer(text, localAnswer) {
 async function loadCivicElections() {
   setGoogleStatus("Loading available elections from Google Civic Information API...");
   try {
+    const { fetchCivicElections } = await getGoogleServices();
     const data = await fetchCivicElections(elements.civicKey.value);
     const elections = data.elections || [];
     setGoogleStatus(`Loaded ${elections.length} election${elections.length === 1 ? "" : "s"}.`);
@@ -429,6 +433,7 @@ async function loadCivicElections() {
 async function lookupVoterInfo() {
   setGoogleStatus("Looking up voter information with Google Civic Information API...");
   try {
+    const { fetchVoterInfo } = await getGoogleServices();
     const data = await fetchVoterInfo({
       apiKey: elements.civicKey.value,
       address: elements.civicAddress.value,
@@ -509,4 +514,9 @@ function setLink(anchor, href, label) {
   anchor.href = href;
   anchor.textContent = label;
   anchor.removeAttribute("aria-disabled");
+}
+
+function getGoogleServices() {
+  googleServicesPromise ||= import("./googleServices.js");
+  return googleServicesPromise;
 }

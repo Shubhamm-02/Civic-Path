@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, sep } from "node:path";
-import { createRequestHandler, resolveRequestPath } from "../server.js";
+import { createRequestHandler, getCacheControl, resolveRequestPath } from "../server.js";
 
 test("resolveRequestPath maps the root route to index.html", async () => {
   const root = await mkdtemp(join(tmpdir(), "civicpath-root-"));
@@ -29,8 +29,17 @@ test("createRequestHandler serves static files with safe content headers", async
 
   assert.equal(response.statusCode, 200);
   assert.equal(response.headers["Content-Type"], "text/html; charset=utf-8");
+  assert.equal(response.headers["Cache-Control"], "no-cache");
   assert.equal(response.headers["X-Content-Type-Options"], "nosniff");
+  assert.match(response.headers["Content-Security-Policy"], /generativelanguage\.googleapis\.com/);
+  assert.equal(response.headers["Permissions-Policy"], "camera=(), geolocation=(), microphone=()");
   assert.equal(response.body, "<h1>CivicPath</h1>");
+});
+
+test("getCacheControl caches static resources for stable repeat loads", () => {
+  assert.equal(getCacheControl(".js"), "public, max-age=3600");
+  assert.equal(getCacheControl(".css"), "public, max-age=3600");
+  assert.equal(getCacheControl(".html"), "no-cache");
 });
 
 function createMockResponse() {
