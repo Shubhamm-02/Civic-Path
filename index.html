@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="CivicPath is an interactive assistant for understanding election timelines, voting steps, and official next actions."
+    />
+    <title>CivicPath Election Assistant</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#assistant">Skip to assistant</a>
+
+    <header class="app-shell app-header">
+      <div class="brand-lockup">
+        <img src="./assets/civic-path.svg" width="64" height="64" alt="" aria-hidden="true" />
+        <div>
+          <p class="eyebrow">Civic education assistant</p>
+          <h1>CivicPath</h1>
+        </div>
+      </div>
+      <div class="header-actions" aria-label="Fast actions">
+        <a id="calendarHeaderLink" class="button subtle" href="#" target="_blank" rel="noreferrer">Calendar</a>
+        <a id="mapsHeaderLink" class="button subtle" href="#" target="_blank" rel="noreferrer">Maps</a>
+      </div>
+    </header>
+
+    <main id="assistant" class="app-shell dashboard">
+      <section class="panel context-panel" aria-labelledby="contextTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Your context</p>
+            <h2 id="contextTitle">Build a voting plan</h2>
+          </div>
+          <button id="resetButton" class="icon-button" type="button" aria-label="Reset context">Reset</button>
+        </div>
+
+        <form id="contextForm" class="context-grid">
+          <label>
+            Country or region
+            <select id="country" name="country">
+              <option value="us">United States</option>
+              <option value="india">India</option>
+              <option value="global">Other / general process</option>
+            </select>
+          </label>
+
+          <label>
+            Election type
+            <select id="electionType" name="electionType"></select>
+          </label>
+
+          <label>
+            Situation
+            <select id="persona" name="persona">
+              <option value="first_time">First-time voter</option>
+              <option value="moved">Recently moved</option>
+              <option value="busy">Busy on election day</option>
+              <option value="accessibility">Need accessible options</option>
+              <option value="overseas">Away from home / overseas</option>
+              <option value="educator">Helping someone else</option>
+            </select>
+          </label>
+
+          <label>
+            Registration status
+            <select id="registrationStatus" name="registrationStatus">
+              <option value="unknown">Not sure</option>
+              <option value="not_registered">Not registered yet</option>
+              <option value="needs_update">Need to update details</option>
+              <option value="registered">Registered / confirmed</option>
+            </select>
+          </label>
+
+          <label>
+            Voting method
+            <select id="votingMethod" name="votingMethod">
+              <option value="unknown">Not decided</option>
+              <option value="in_person">In person on election day</option>
+              <option value="early">Early in person</option>
+              <option value="mail">Mail / absentee ballot</option>
+              <option value="proxy">Proxy / service option</option>
+            </select>
+          </label>
+
+          <label>
+            Election day
+            <input id="electionDate" name="electionDate" type="date" />
+          </label>
+
+          <label class="wide">
+            City, state, postal code, or constituency
+            <input
+              id="location"
+              name="location"
+              autocomplete="address-level2"
+              placeholder="Example: Austin, TX or Pune, Maharashtra"
+            />
+          </label>
+
+          <button class="button primary wide" type="submit">Build my plan</button>
+        </form>
+
+        <details class="service-drawer">
+          <summary>Google services</summary>
+          <div class="service-grid">
+            <label>
+              Gemini API key
+              <input id="geminiKey" type="password" autocomplete="off" placeholder="Optional" />
+            </label>
+            <label>
+              Google Civic API key
+              <input id="civicKey" type="password" autocomplete="off" placeholder="US voter info" />
+            </label>
+            <label>
+              US residential address
+              <input id="civicAddress" autocomplete="street-address" placeholder="For Civic API lookup" />
+            </label>
+            <label>
+              Election ID
+              <input id="civicElectionId" inputmode="numeric" placeholder="Optional" />
+            </label>
+            <label class="checkbox-row wide">
+              <input id="rememberKeys" type="checkbox" />
+              Save API keys on this device
+            </label>
+            <div class="service-actions wide">
+              <button id="loadElectionsButton" class="button" type="button">Load elections</button>
+              <button id="lookupVoterButton" class="button" type="button">Lookup voter info</button>
+              <button id="clearKeysButton" class="button subtle" type="button">Clear keys</button>
+            </div>
+          </div>
+          <div id="googleStatus" class="status-box" role="status" aria-live="polite"></div>
+        </details>
+      </section>
+
+      <section class="panel plan-panel" aria-labelledby="planTitle">
+        <div class="readiness-strip">
+          <div class="score-meter" aria-live="polite">
+            <div id="scoreRing" class="score-ring" aria-hidden="true"><span id="scoreValue">0</span></div>
+            <div>
+              <p class="eyebrow">Readiness</p>
+              <h2 id="planTitle">Next best action</h2>
+              <p id="nextAction" class="next-action"></p>
+            </div>
+          </div>
+          <div id="urgencyBadge" class="urgency-badge">Planning</div>
+        </div>
+
+        <div class="insight-grid">
+          <article class="mini-panel">
+            <h3>Timeline</h3>
+            <ol id="timelineList" class="timeline-list"></ol>
+          </article>
+          <article class="mini-panel">
+            <h3>Checklist</h3>
+            <div id="checklist" class="checklist"></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel assistant-panel" aria-labelledby="askTitle">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Interactive assistant</p>
+            <h2 id="askTitle">Ask about the process</h2>
+          </div>
+          <span id="assistantMode" class="mode-pill">Local logic</span>
+        </div>
+
+        <div id="suggestedQuestions" class="suggested-questions" aria-label="Suggested questions"></div>
+
+        <form id="questionForm" class="question-form">
+          <label for="questionInput" class="visually-hidden">Question</label>
+          <textarea
+            id="questionInput"
+            rows="3"
+            placeholder="Ask about registration, documents, polling places, accessible voting, deadlines, or results."
+          ></textarea>
+          <button class="button primary" type="submit">Ask</button>
+        </form>
+
+        <article id="answerBox" class="answer-box" aria-live="polite"></article>
+
+        <div class="insight-grid bottom-grid">
+          <article class="mini-panel">
+            <h3>Official links</h3>
+            <ul id="officialLinks" class="link-list"></ul>
+          </article>
+          <article class="mini-panel">
+            <h3>Google actions</h3>
+            <div id="googleActions" class="action-stack"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <template id="timelineItemTemplate">
+      <li>
+        <span class="timeline-dot" aria-hidden="true"></span>
+        <div>
+          <p class="timeline-title"></p>
+          <p class="timeline-meta"></p>
+        </div>
+      </li>
+    </template>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

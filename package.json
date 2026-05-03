@@ -1,0 +1,19 @@
+{
+  "name": "civic-path-election-assistant",
+  "version": "1.0.0",
+  "description": "Interactive election process assistant with optional Google Gemini and Google Civic Information API integration.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "serve": "python3 -m http.server 5173",
+    "test": "node --test"
+  },
+  "keywords": [
+    "elections",
+    "civic-tech",
+    "google-civic-information-api",
+    "gemini",
+    "accessibility"
+  ],
+  "license": "MIT"
+}
