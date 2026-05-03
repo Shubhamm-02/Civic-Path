@@ -16,6 +16,21 @@ The app combines deterministic civic workflow logic with optional Google service
 - Avoids inventing legal deadlines. The assistant repeatedly routes deadline-sensitive questions to official election sources.
 - Stores only non-sensitive planning context by default. API keys are saved only when the user opts in.
 
+## Architecture
+
+```text
+index.html                 App shell and semantic UI landmarks
+server.js                  Cloud Run static server, import-safe and tested
+src/electionData.js        Country profiles, personas, timeline data, intent keywords
+src/electionAssistant.js   Pure planning, scoring, calendar/map URL, and Q&A logic
+src/googleServices.js      Gemini and Google Civic Information API clients
+src/main.js                Browser state, rendering, forms, and user interaction
+src/styles.css             Responsive, accessible interface styling
+tests/                     Node test suite for planner and server behavior
+```
+
+Core election reasoning is kept in pure functions so it can be tested without a browser. Static civic data is separated from behavior to keep future country/persona updates low-risk. The Cloud Run server is intentionally small and serves only files inside the project root.
+
 ## Google Services Used
 
 - **Google Gemini API:** Optional AI explanation layer using `gemini-2.5-flash`. The local deterministic answer and voter context are supplied to Gemini so the model stays grounded in the app logic.
@@ -47,13 +62,51 @@ npm run serve
 
 Then open `http://localhost:5173`.
 
+For a Cloud Run-style local server:
+
+```bash
+npm start
+```
+
+Then open `http://localhost:8080`.
+
 ## Test
 
 ```bash
 npm test
 ```
 
-The tests validate plan generation, urgency logic, intent detection, Google action URL creation, and privacy-sensitive share text.
+The tests validate plan generation, urgency logic, intent detection, Google action URL creation, privacy-sensitive share text, static server routing, and traversal protection.
+
+Run the full quality check:
+
+```bash
+npm run check
+```
+
+## Deployment
+
+Cloud Run deployment uses a small Node static server that listens on the `PORT` environment variable:
+
+```bash
+gcloud run deploy civic-path \
+  --source . \
+  --region asia-south1 \
+  --allow-unauthenticated \
+  --min-instances=0 \
+  --max-instances=1
+```
+
+`.gcloudignore` excludes tests, docs, git metadata, and social assets from the source upload while keeping runtime files available.
+
+## Quality, Security, and Accessibility
+
+- No framework or runtime dependencies are required for the core app.
+- API keys are never committed and are only saved when the user explicitly opts in.
+- User and Gemini-generated text is rendered through `textContent`, not HTML injection.
+- The server adds `X-Content-Type-Options: nosniff` and blocks path traversal outside the project root.
+- The UI uses semantic landmarks, labels, keyboard-focus styles, accessible contrast, responsive layout, and reduced-motion support.
+- Deadline-sensitive guidance includes an official-source caveat instead of pretending to be a legal authority.
 
 ## Submission Notes
 

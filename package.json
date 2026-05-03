@@ -5,8 +5,13 @@
   "type": "module",
   "private": true,
   "scripts": {
+    "start": "node server.js",
     "serve": "python3 -m http.server 5173",
-    "test": "node --test"
+    "test": "node --test",
+    "check": "node --check server.js && node --check src/electionAssistant.js && node --check src/electionData.js && node --check src/googleServices.js && node --check src/main.js && node --test"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "keywords": [
     "elections",
